@@ -50,6 +50,13 @@ impl Worker {
 
 impl Drop for Worker {
     fn drop(&mut self) {
-        if let Ok(()) = self.termination_sender.send(()) {}
+        if let Ok(()) = self.termination_sender.send(()) {
+            let thread_option = std::mem::replace(&mut self.thread, None);
+            if let Some(thread_to_join) = thread_option {
+                if let Err(panicked_at) = thread_to_join.join() {
+                    // log
+                }
+            }
+        }
     }
 }
