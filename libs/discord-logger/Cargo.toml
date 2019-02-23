@@ -5,4 +5,12 @@ authors = ["greaka"]
 edition = "2018"
 
 [dependencies]
-serenity = "0.5"
+log = "0.4"
+
+[dependencies.serenity]
+default-features = false
+features = [
+    "http",
+    "model"
+]
+version = "0.5"
