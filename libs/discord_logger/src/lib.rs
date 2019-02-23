@@ -2,21 +2,20 @@ extern crate log;
 extern crate serenity;
 
 use log::{Level, Metadata, Record};
-use serenity::http;
+use serenity::{http, model::webhook::Webhook};
 use std;
 
 pub struct DiscordLogger {
-    id: u64,
-    token: &str,
+    webhook: Webhook,
     level: Level,
 }
 
 impl DiscordLogger {
     fn new(webhook_id: u64, webhook_token: &str, log_level: Level) -> DiscordLogger {
         DiscordLogger {
-            id: webhook_id,
-            token: webhook_token,
-            level: log_level
+            webhook: http::get_webhook_with_token(webhook_id, webhook_token)
+                .expect("error initializing discord logger"),
+            level: log_level,
         }
     }
 }
@@ -27,10 +26,9 @@ impl log::Log for DiscordLogger {
     }
 
     fn log(&self, record: &Record) {
-        let mut webhook = http::get_webhook_with_token(&self.id, &self.token)?;
-
-        let _ = webhook
-            .execute(false, |w| w.content(concat!("`", record.args(), "`")));
+        let _ = self
+            .webhook
+            .execute(false, |w| w.content(&format!("`{}`", record.args())));
     }
 
     fn flush(&self) {}

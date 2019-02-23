@@ -5,5 +5,5 @@ codegen-units = 1
 [workspace]
 members = [
     "programs/bot",
-    "libs/discord-logger",
+    "libs/discord_logger",
 ]
