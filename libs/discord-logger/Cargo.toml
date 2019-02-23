@@ -1,0 +1,8 @@
+[package]
+name = "discord-logger"
+version = "0.1.0"
+authors = ["greaka"]
+edition = "2018"
+
+[dependencies]
+serenity = "0.5"
