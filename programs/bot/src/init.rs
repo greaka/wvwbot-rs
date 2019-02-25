@@ -8,6 +8,7 @@ use std::{fs, thread};
 pub struct State {
     pub config: Config,
     workers: Vec<Worker>,
+    loggers: Vec<discord_logger::DiscordLogger>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -17,10 +18,18 @@ struct RatelimitConfig {
     interval: u64,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+struct LogConfig {
+    webhook_id: u64,
+    webhook_token: String,
+    log_levels: Vec<log::Level>,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     worker_count: u32,
     ratelimit: RatelimitConfig,
+    logs: Vec<LogConfig>,
 }
 
 pub fn load_config(location: &str) -> Result<Config, std::io::Error> {
@@ -34,9 +43,31 @@ pub fn load_config(location: &str) -> Result<Config, std::io::Error> {
 pub fn init(config: Config) -> Result<State, &'static str> {
     let mut ratelimit = init_ratelimit(config.ratelimit.clone());
 
-    let workers = init_workers(&config, &mut ratelimit).expect("failed to init workers");
+    let workers = init_workers(&config, &mut ratelimit);
 
-    Ok(State { config, workers })
+    let loggers = init_logger(&config.logs)?;
+
+    Ok(State {
+        config,
+        workers,
+        loggers,
+    })
+}
+
+fn init_logger(
+    config: &Vec<LogConfig>,
+) -> Result<Vec<discord_logger::DiscordLogger>, &'static str> {
+    let loggers = config
+        .iter()
+        .map(|conf| {
+            discord_logger::DiscordLogger::new(
+                conf.webhook_id,
+                &conf.webhook_token,
+                conf.log_levels.clone(),
+            )
+        })
+        .collect();
+    Ok(loggers)
 }
 
 fn init_ratelimit(config: RatelimitConfig) -> ratelimit::Handle {
@@ -52,14 +83,11 @@ fn init_ratelimit(config: RatelimitConfig) -> ratelimit::Handle {
     handle
 }
 
-fn init_workers(
-    config: &Config,
-    handle: &mut ratelimit::Handle,
-) -> Result<Vec<Worker>, &'static str> {
+fn init_workers(config: &Config, handle: &mut ratelimit::Handle) -> Vec<Worker> {
     let mut workers = vec![];
     for _ in 0..config.worker_count {
         let worker_handle = handle.clone();
         workers.push(Worker::new(worker_handle))
     }
-    Ok(workers)
+    workers
 }
