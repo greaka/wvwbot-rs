@@ -57,7 +57,7 @@ pub fn init(config: Config) -> Result<State, &'static str> {
 fn init_logger(
     config: &Vec<LogConfig>,
 ) -> Result<Vec<discord_logger::DiscordLogger>, &'static str> {
-    let loggers = config
+    let loggers: Vec<discord_logger::DiscordLogger> = config
         .iter()
         .map(|conf| {
             discord_logger::DiscordLogger::new(
@@ -67,6 +67,11 @@ fn init_logger(
             )
         })
         .collect();
+
+    loggers
+        .iter()
+        .map(|conf| log::set_boxed_logger(Box::new(conf)));
+
     Ok(loggers)
 }
 

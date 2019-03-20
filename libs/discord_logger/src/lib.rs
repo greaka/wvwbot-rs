@@ -19,7 +19,7 @@ impl DiscordLogger {
     }
 }
 
-impl log::Log for DiscordLogger {
+impl log::Log for &DiscordLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         self.levels.contains(&metadata.level())
     }
